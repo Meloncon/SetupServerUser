@@ -17,6 +17,7 @@ class Program
         CreateUser(newUsername, newPassword);
         SetupSSH(newUsername);
         GrantSudoPrivileges(newUsername);
+        GrantPasswordlessSudoAccess(newUsername);
     }
 
     static void CreateUser(string username, string password)
@@ -58,6 +59,27 @@ class Program
         catch (Exception e)
         {
             Console.WriteLine($"Failed to grant sudo privileges to user '{username}': {e.Message}");
+        }
+    }
+
+    static void GrantPasswordlessSudoAccess(string username)
+    {
+        try
+        {
+            // Edit the sudoers file to grant passwordless sudo access to the user.
+            using (Process process = new Process())
+            {
+                process.StartInfo.FileName = "sudo";
+                process.StartInfo.Arguments = $"visudo -f /etc/sudoers -c -q -s -A -V -i -p '' -u {username} -r {username}";
+                process.Start();
+                process.WaitForExit();
+            }
+
+            Console.WriteLine($"Passwordless sudo access granted to user '{username}'.");
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine($"Failed to grant passwordless sudo access to user '{username}': {e.Message}");
         }
     }
 }
