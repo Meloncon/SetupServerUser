@@ -5,19 +5,27 @@ class Program
 {
     static void Main(string[] args)
     {
-        if (args.Length != 2)
+        if (args.Length < 1 || args.Length > 2)
         {
-            Console.WriteLine("Usage: dotnet script.exe <username> <password>");
+            Console.WriteLine("Usage: dotnet script.exe <username> [password]");
             return;
         }
 
         string newUsername = args[0];
-        string newPassword = args[1];
+        string newPassword = args.Length == 2 ? args[1] : null;
 
-        CreateUser(newUsername, newPassword);
+        if (string.IsNullOrEmpty(newPassword))
+        {
+            CreateUserWithoutPassword(newUsername);
+        }
+        else
+        {
+            CreateUser(newUsername, newPassword);
+        }
+
         SetupSSH(newUsername);
         AddPublicKeyToAuthorizedKeys(newUsername);
-        ChangeDefaultShell(newUsername, "/bin/bash");
+        ChangeDefaultShell(newUsername, "/bin/bash"); // Change the shell to BASH
         GrantSudoPrivileges(newUsername);
         GrantPasswordlessSudoAccess(newUsername);
     }
@@ -28,6 +36,19 @@ class Program
         {
             Process.Start("useradd", $"-m -p {password} {username}").WaitForExit();
             Console.WriteLine($"User '{username}' created successfully.");
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine($"Failed to create user '{username}': {e.Message}");
+        }
+    }
+
+    static void CreateUserWithoutPassword(string username)
+    {
+        try
+        {
+            Process.Start("useradd", $"-m -s /usr/sbin/nologin {username}").WaitForExit();
+            Console.WriteLine($"User '{username}' created successfully without a password.");
         }
         catch (Exception e)
         {
